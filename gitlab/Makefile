@@ -22,13 +22,13 @@ RUN_DEPENDS+=	redis-server:${PORTSDIR}/databases/redis \
 		git:${PORTSDIR}/devel/git
 
 USE_PYTHON=	2.5-2.9
-USE_MYSQL=	server
+USE_POSTGRESQL=	server
 
 GITLAB_USER=	gitlab
 GITLAB_GROUP=	git
-GITLAB_MYSQL_DB=	gitlab
-GITLAB_MYSQL_USER=	${GITLAB_USER}
-GITLAB_MYSQL_PASS=	gitlab
+GITLAB_POSTGRESQL_DB=	gitlab
+GITLAB_POSTGRESQL_USER=	${GITLAB_USER}
+GITLAB_POSTGRESQL_PASS=	gitlab
 
 GIT_HOME=	${PREFIX}/git
 
@@ -38,12 +38,12 @@ GEMS_FILENAME=	${GEMS_DISTNAME}.tgz
 
 USE_RC_SUBR=	gitlab
 
-SUB_FILES=	gitlab pkg-deinstall gitlab_install.sh mysql_setup.sql nginx.example apache.example
+SUB_FILES=	gitlab pkg-deinstall gitlab_install.sh postgresql_setup.sql nginx.example apache.example
 SUB_LIST=	GITLAB_USER=${GITLAB_USER} \
 		GIT_HOME=${GIT_HOME} \
-		GITLAB_MYSQL_DB=${GITLAB_MYSQL_DB} \
-		GITLAB_MYSQL_USER=${GITLAB_MYSQL_USER} \
-		GITLAB_MYSQL_PASS=${GITLAB_MYSQL_PASS}
+		GITLAB_POSTGRESQL_DB=${GITLAB_POSTGRESQL_DB} \
+		GITLAB_POSTGRESQL_USER=${GITLAB_POSTGRESQL_USER} \
+		GITLAB_POSTGRESQL_PASS=${GITLAB_POSTGRESQL_PASS}
 
 USERS=		git
 GROUPS=		${GITLAB_GROUP}
@@ -57,10 +57,10 @@ do-build:
 	@${REINPLACE_CMD} -e 's|/home/git/|${GIT_HOME}/|g' ${WRKSRC}/config/gitlab.yml
 	@${CP} ${WRKSRC}/config/unicorn.rb.example ${WRKSRC}/config/unicorn.rb
 	@${REINPLACE_CMD} -e 's|/home/gitlab/gitlab|${WWWDIR}|g' ${WRKSRC}/config/unicorn.rb
-	@${CP} ${WRKSRC}/config/database.yml.mysql ${WRKSRC}/config/database.yml
-	@${REINPLACE_CMD} -e 's|gitlabhq_production|${GITLAB_MYSQL_DB}|g' ${WRKSRC}/config/database.yml
-	@${REINPLACE_CMD} -e 's|root|${GITLAB_MYSQL_USER}|g' ${WRKSRC}/config/database.yml
-	@${REINPLACE_CMD} -e 's|secure password|${GITLAB_MYSQL_PASS}|g' ${WRKSRC}/config/database.yml
+	@${CP} ${WRKSRC}/config/database.yml.postgresql ${WRKSRC}/config/database.yml
+	@${REINPLACE_CMD} -e 's|gitlabhq_production|${GITLAB_POSTGRESQL_DB}|g' ${WRKSRC}/config/database.yml
+	@${REINPLACE_CMD} -e 's|root|${GITLAB_POSTGRESQL_USER}|g' ${WRKSRC}/config/database.yml
+	@${REINPLACE_CMD} -e 's|secure password|${GITLAB_POSTGRESQL_PASS}|g' ${WRKSRC}/config/database.yml
 	@if ! which -s gem19; then \
 		if [ ! -e ${DISTDIR}/${GEMS_FILENAME} ]; then \
 			(cd ${DISTDIR} && ${FETCH_CMD} http://rubyforge.org/frs/download.php/76729/${GEMS_FILENAME}); \
@@ -101,9 +101,9 @@ do-install:
 	fi
 	@gem19 install bundler
 	@gem19 install charlock_holmes --version '0.6.9'
-	@(cd ${WWWDIR} && sudo -u ${GITLAB_USER} -H bundle install --deployment --without development test postgres)
+	@(cd ${WWWDIR} && sudo -u ${GITLAB_USER} -H bundle install --deployment --without development test)
 	@${MKDIR} ${WWWDIR}/distrib
-	@${CP} ${WRKDIR}/mysql_setup.sql ${WWWDIR}/distrib/
+	@${CP} ${WRKDIR}/postgresql_setup.sql ${WWWDIR}/distrib/
 	@${CP} ${WRKDIR}/nginx.example ${WWWDIR}/distrib/
 	@${CP} ${WRKDIR}/apache.example ${WWWDIR}/distrib/
 	@${INSTALL_SCRIPT} ${WRKDIR}/gitlab_install.sh ${WWWDIR}/distrib/
